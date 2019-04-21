@@ -12,6 +12,7 @@
 namespace Sonata\AdminBundle\DependencyInjection\Compiler;
 
 use Sonata\AdminBundle\Admin\BaseFieldDescription;
+use Sonata\AdminBundle\Datagrid\Pager;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -22,7 +23,7 @@ use Symfony\Component\DependencyInjection\Reference;
  * Add all dependencies to the Admin class, this avoid to write too many lines
  * in the configuration files.
  *
- * @author Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
  */
 class AddDependencyCallsCompilerPass implements CompilerPassInterface
 {
@@ -31,6 +32,16 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
      */
     public function process(ContainerBuilder $container)
     {
+        // check if translator service exist
+        if (!$container->hasAlias('translator')) {
+            throw new \RuntimeException('The "translator" service is not yet enabled.
+                It\'s required by SonataAdmin to display all labels properly.
+
+                To learn how to enable the translator service please visit:
+                http://symfony.com/doc/current/book/translation.html#book-translation-configuration
+             ');
+        }
+
         $parameterBag = $container->getParameterBag();
         $groupDefaults = $admins = $classes = array();
 
@@ -63,7 +74,7 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
 
                 $classes[$arguments[1]][] = $id;
 
-                $showInDashboard = (bool) (isset($attributes['show_in_dashboard']) ?  $parameterBag->resolveValue($attributes['show_in_dashboard']) : true);
+                $showInDashboard = (boolean) (isset($attributes['show_in_dashboard']) ?  $parameterBag->resolveValue($attributes['show_in_dashboard']) : true);
                 if (!$showInDashboard) {
                     continue;
                 }
@@ -81,7 +92,12 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
                     );
                 }
 
-                $groupDefaults[$resolvedGroupName]['items'][] = $id;
+                $groupDefaults[$resolvedGroupName]['items'][] = array(
+                    'admin'        => $id,
+                    'label'        => !empty($attributes['label']) ? $attributes['label'] : '',
+                    'route'        => '',
+                    'route_params' => array(),
+                );
             }
         }
 
@@ -123,6 +139,31 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
                     $groups[$resolvedGroupName]['roles'] = $groupDefaults[$resolvedGroupName]['roles'];
                 }
             }
+        } elseif ($container->getParameter('sonata.admin.configuration.sort_admins')) {
+            $groups = $groupDefaults;
+
+            $elementSort = function (&$element) {
+                usort(
+                    $element['items'],
+                    function ($a, $b) {
+                        $a = !empty($a['label']) ? $a['label'] : $a['admin'];
+                        $b = !empty($b['label']) ? $b['label'] : $b['admin'];
+
+                        if ($a === $b) {
+                            return 0;
+                        }
+
+                        return $a < $b ? -1 : 1;
+                    }
+                );
+            };
+
+            /*
+             * 1) sort the groups by their index
+             * 2) sort the elements within each group by label/admin
+             */
+            ksort($groups);
+            array_walk($groups, $elementSort);
         } else {
             $groups = $groupDefaults;
         }
@@ -138,8 +179,8 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
     /**
      * This method read the attribute keys and configure admin class to use the related dependency.
      *
-     * @param \Symfony\Component\DependencyInjection\Definition $definition
-     * @param array                                             $attributes
+     * @param Definition $definition
+     * @param array      $attributes
      */
     public function applyConfigurationFromAttribute(Definition $definition, array $attributes)
     {
@@ -172,22 +213,26 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
     /**
      * Apply the default values required by the AdminInterface to the Admin service definition.
      *
-     * @param \Symfony\Component\DependencyInjection\ContainerBuilder $container
-     * @param string                                                  $serviceId
-     * @param array                                                   $attributes
+     * @param ContainerBuilder $container
+     * @param string           $serviceId
+     * @param array            $attributes
      *
-     * @return \Symfony\Component\DependencyInjection\Definition
+     * @return Definition
      */
     public function applyDefaults(ContainerBuilder $container, $serviceId, array $attributes = array())
     {
         $definition = $container->getDefinition($serviceId);
         $settings = $container->getParameter('sonata.admin.configuration.admin_services');
 
-        $definition->setScope(ContainerInterface::SCOPE_PROTOTYPE);
+        if (method_exists($definition, 'setShared')) { // Symfony 2.8+
+            $definition->setShared(false);
+        } else { // For Symfony <2.8 compatibility
+            $definition->setScope(ContainerInterface::SCOPE_PROTOTYPE);
+        }
 
         $manager_type = $attributes['manager_type'];
 
-        $addServices = isset($settings[$serviceId]) ? $settings[$serviceId] : array();
+        $overwriteAdminConfiguration = isset($settings[$serviceId]) ? $settings[$serviceId] : array();
 
         $defaultAddServices = array(
             'model_manager'             => sprintf('sonata.admin.manager.%s', $manager_type),
@@ -211,13 +256,23 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
         foreach ($defaultAddServices as $attr => $addServiceId) {
             $method = 'set'.BaseFieldDescription::camelize($attr);
 
-            if (isset($addServices[$attr]) || !$definition->hasMethodCall($method)) {
-                $definition->addMethodCall($method, array(new Reference(isset($addServices[$attr]) ? $addServices[$attr] : $addServiceId)));
+            if (isset($overwriteAdminConfiguration[$attr]) || !$definition->hasMethodCall($method)) {
+                $definition->addMethodCall($method, array(new Reference(isset($overwriteAdminConfiguration[$attr]) ? $overwriteAdminConfiguration[$attr] : $addServiceId)));
             }
         }
 
-        if (isset($service['label'])) {
-            $label = $service['label'];
+        if (isset($overwriteAdminConfiguration['pager_type'])) {
+            $pagerType = $overwriteAdminConfiguration['pager_type'];
+        } elseif (isset($attributes['pager_type'])) {
+            $pagerType = $attributes['pager_type'];
+        } else {
+            $pagerType = Pager::TYPE_DEFAULT;
+        }
+
+        $definition->addMethodCall('setPagerType', array($pagerType));
+
+        if (isset($overwriteAdminConfiguration['label'])) {
+            $label = $overwriteAdminConfiguration['label'];
         } elseif (isset($attributes['label'])) {
             $label = $attributes['label'];
         } else {
@@ -234,7 +289,7 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
 
         $definition->addMethodCall('setPersistFilters', array($persistFilters));
 
-        $this->fixTemplates($container, $definition);
+        $this->fixTemplates($container, $definition, isset($overwriteAdminConfiguration['templates']) ? $overwriteAdminConfiguration['templates'] : array('view' => array()));
 
         if ($container->hasParameter('sonata.admin.configuration.security.information') && !$definition->hasMethodCall('setSecurityInformation')) {
             $definition->addMethodCall('setSecurityInformation', array('%sonata.admin.configuration.security.information%'));
@@ -246,10 +301,11 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
     }
 
     /**
-     * @param \Symfony\Component\DependencyInjection\ContainerBuilder $container
-     * @param \Symfony\Component\DependencyInjection\Definition       $definition
+     * @param ContainerBuilder $container
+     * @param Definition       $definition
+     * @param array            $overwrittenTemplates
      */
-    public function fixTemplates(ContainerBuilder $container, Definition $definition)
+    public function fixTemplates(ContainerBuilder $container, Definition $definition, array $overwrittenTemplates = array())
     {
         $definedTemplates = $container->getParameter('sonata.admin.configuration.templates');
 
@@ -264,6 +320,17 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
             if ($method[0] == 'setTemplate') {
                 $definedTemplates[$method[1][0]] = $method[1][1];
                 continue;
+            }
+
+            // set template for simple pager if it is not already overwritten
+            if ($method[0] === 'setPagerType'
+                && $method[1][0] === Pager::TYPE_SIMPLE
+                && (
+                    !isset($definedTemplates['pager_results'])
+                    || $definedTemplates['pager_results'] === 'SonataAdminBundle:Pager:results.html.twig'
+                )
+            ) {
+                $definedTemplates['pager_results'] = 'SonataAdminBundle:Pager:simple_pager_results.html.twig';
             }
 
             $methods[$pos] = $method;
@@ -300,7 +367,11 @@ class AddDependencyCallsCompilerPass implements CompilerPassInterface
             'pager_links'                => 'SonataAdminBundle:Pager:links.html.twig',
             'pager_results'              => 'SonataAdminBundle:Pager:results.html.twig',
             'tab_menu_template'          => 'SonataAdminBundle:Core:tab_menu_template.html.twig',
-        ), $definedTemplates);
+            'knp_menu_template'          => 'SonataAdminBundle:Menu:sonata_menu.html.twig',
+            'outer_list_rows_mosaic'     => 'SonataAdminBundle:CRUD:list_outer_rows_mosaic.html.twig',
+            'outer_list_rows_list'       => 'SonataAdminBundle:CRUD:list_outer_rows_list.html.twig',
+            'outer_list_rows_tree'       => 'SonataAdminBundle:CRUD:list_outer_rows_tree.html.twig',
+        ), $definedTemplates, $overwrittenTemplates['view']);
 
         $definition->addMethodCall('setTemplates', array($definedTemplates));
     }

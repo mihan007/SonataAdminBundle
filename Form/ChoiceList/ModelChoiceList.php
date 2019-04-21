@@ -17,12 +17,18 @@ use Symfony\Component\Form\Exception\InvalidArgumentException;
 use Symfony\Component\Form\Exception\RuntimeException;
 use Symfony\Component\Form\Extension\Core\ChoiceList\SimpleChoiceList;
 use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyAccess\PropertyPath;
 
+/**
+ * Class ModelChoiceList.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 class ModelChoiceList extends SimpleChoiceList
 {
     /**
-     * @var \Sonata\AdminBundle\Model\ModelManagerInterface
+     * @var ModelManagerInterface
      */
     private $modelManager;
 
@@ -72,7 +78,15 @@ class ModelChoiceList extends SimpleChoiceList
      */
     private $reflProperties = array();
 
+    /**
+     * @var PropertyPath
+     */
     private $propertyPath;
+
+    /**
+     * @var PropertyAccessorInterface
+     */
+    private $propertyAccessor;
 
     /**
      * @param ModelManagerInterface $modelManager
@@ -81,7 +95,7 @@ class ModelChoiceList extends SimpleChoiceList
      * @param null                  $query
      * @param array                 $choices
      */
-    public function __construct(ModelManagerInterface $modelManager, $class, $property = null, $query = null, $choices = array())
+    public function __construct(ModelManagerInterface $modelManager, $class, $property = null, $query = null, $choices = array(), PropertyAccessorInterface $propertyAccessor = null)
     {
         $this->modelManager   = $modelManager;
         $this->class          = $class;
@@ -92,6 +106,7 @@ class ModelChoiceList extends SimpleChoiceList
         // displaying entities as strings
         if ($property) {
             $this->propertyPath = new PropertyPath($property);
+            $this->propertyAccessor = $propertyAccessor ?: PropertyAccess::createPropertyAccessor();
         }
 
         parent::__construct($this->load($choices));
@@ -120,12 +135,16 @@ class ModelChoiceList extends SimpleChoiceList
      */
     protected function load($choices)
     {
-        if (is_array($choices)) {
+        if (is_array($choices) && count($choices) > 0) {
             $entities = $choices;
         } elseif ($this->query) {
             $entities = $this->modelManager->executeQuery($this->query);
         } else {
             $entities = $this->modelManager->findBy($this->class);
+        }
+
+        if (null === $entities) {
+            return array();
         }
 
         $choices = array();
@@ -134,14 +153,14 @@ class ModelChoiceList extends SimpleChoiceList
         foreach ($entities as $key => $entity) {
             if ($this->propertyPath) {
                 // If the property option was given, use it
-                $propertyAccessor = PropertyAccess::createPropertyAccessor();
-                $value = $propertyAccessor->getValue($entity, $this->propertyPath);
+                $value = $this->propertyAccessor->getValue($entity, $this->propertyPath);
             } else {
                 // Otherwise expect a __toString() method in the entity
                 try {
                     $value = (string) $entity;
                 } catch (\Exception $e) {
-                    throw new RuntimeException(sprintf("Unable to convert the entity %s to String, entity must have a '__toString()' method defined", ClassUtils::getClass($entity)), 0, $e);
+                    throw new RuntimeException(sprintf('Unable to convert the entity "%s" to string, provide '
+                        .'"property" option or implement "__toString()" method in your entity.', ClassUtils::getClass($entity)), 0, $e);
                 }
             }
 
@@ -256,7 +275,7 @@ class ModelChoiceList extends SimpleChoiceList
     }
 
     /**
-     * @return \Sonata\AdminBundle\Model\ModelManagerInterface
+     * @return ModelManagerInterface
      */
     public function getModelManager()
     {

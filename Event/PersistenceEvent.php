@@ -23,6 +23,8 @@ use Symfony\Component\EventDispatcher\Event;
  * You can register the listener to the event dispatcher by using:
  *   - sonata.admin.event.persistence.[pre|post]_[persist|update|remove)
  *   - sonata.admin.event.persistence.[admin_code].[pre|post]_[persist|update|remove)  (not implemented yet)
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
  */
 class PersistenceEvent extends Event
 {
@@ -33,10 +35,19 @@ class PersistenceEvent extends Event
     const TYPE_PRE_REMOVE   = 'pre_remove';
     const TYPE_POST_REMOVE  = 'post_remove';
 
+    /**
+     * @var AdminInterface
+     */
     protected $admin;
 
+    /**
+     * @var object
+     */
     protected $object;
 
+    /**
+     * @var string
+     */
     protected $type;
 
     /**
@@ -52,7 +63,7 @@ class PersistenceEvent extends Event
     }
 
     /**
-     * @return \Sonata\AdminBundle\Admin\AdminInterface
+     * @return AdminInterface
      */
     public function getAdmin()
     {

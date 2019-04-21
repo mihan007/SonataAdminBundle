@@ -12,6 +12,9 @@
 namespace Sonata\AdminBundle\Tests\Admin;
 
 use Sonata\AdminBundle\Admin\BaseFieldDescription;
+use Sonata\AdminBundle\Tests\Fixtures\Admin\FieldDescription;
+use Sonata\AdminBundle\Tests\Fixtures\Entity\Foo;
+use Sonata\AdminBundle\Tests\Fixtures\Entity\FooCall;
 
 class BaseFieldDescriptionTest extends \PHPUnit_Framework_TestCase
 {
@@ -103,7 +106,7 @@ class BaseFieldDescriptionTest extends \PHPUnit_Framework_TestCase
 
         $this->assertSame(42, $description->getFieldValue($mock, 'fake'));
 
-/*
+        /*
          * Test with One parameter int
          */
         $arg1 = 38;
@@ -118,7 +121,7 @@ class BaseFieldDescriptionTest extends \PHPUnit_Framework_TestCase
 
         $this->assertSame(40, $description1->getFieldValue($mock1, 'fake'));
 
-/*
+        /*
          * Test with Two parameters int
          */
         $arg2 = 4;
@@ -131,6 +134,15 @@ class BaseFieldDescriptionTest extends \PHPUnit_Framework_TestCase
         $returnValue2 = $arg1 + $arg2;
         $mock2->expects($this->any())->method('getWithTwoParameters')->with($this->equalTo($arg1), $this->equalTo($arg2))->will($this->returnValue($returnValue2));
         $this->assertSame(42, $description2->getFieldValue($mock2, 'fake'));
+
+        /*
+         * Test with underscored attribute name
+         */
+        $description3  = new FieldDescription();
+        $mock3         = $this->getMock('stdClass', array('getFake'));
+
+        $mock3->expects($this->once())->method('getFake')->will($this->returnValue(42));
+        $this->assertSame(42, $description3->getFieldValue($mock3, '_fake'));
     }
 
     /**
@@ -141,6 +153,15 @@ class BaseFieldDescriptionTest extends \PHPUnit_Framework_TestCase
         $description = new FieldDescription();
         $mock = $this->getMock('stdClass', array('getFoo'));
 
+        $description->getFieldValue($mock, 'fake');
+    }
+
+    public function testGetVirtualValue()
+    {
+        $description = new FieldDescription();
+        $mock = $this->getMock('stdClass', array('getFoo'));
+
+        $description->setOption('virtual_field', true);
         $description->getFieldValue($mock, 'fake');
     }
 
@@ -179,49 +200,41 @@ class BaseFieldDescriptionTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('FooBar', BaseFieldDescription::camelize('foo bar'));
         $this->assertSame('FOoBar', BaseFieldDescription::camelize('fOo bar'));
     }
-}
 
-class FieldDescription extends BaseFieldDescription
-{
-    public function setAssociationMapping($associationMapping)
+    public function testGetFieldValue()
     {
-        // TODO: Implement setAssociationMapping() method.
+        $foo = new Foo();
+        $foo->setBar('Bar');
+
+        $description = new FieldDescription();
+        $this->assertSame('Bar', $description->getFieldValue($foo, 'bar'));
+
+        $this->setExpectedException('Sonata\AdminBundle\Exception\NoValueException');
+        $description->getFieldValue($foo, 'inexistantMethod');
     }
 
-    public function getTargetEntity()
+    public function testGetFieldValueWithCodeOption()
     {
-        // TODO: Implement getTargetEntity() method.
+        $foo = new Foo();
+        $foo->setBaz('Baz');
+
+        $description = new FieldDescription();
+
+        $description->setOption('code', 'getBaz');
+        $this->assertSame('Baz', $description->getFieldValue($foo, 'inexistantMethod'));
+
+        $description->setOption('code', 'inexistantMethod');
+        $this->setExpectedException('Sonata\AdminBundle\Exception\NoValueException');
+        $description->getFieldValue($foo, 'inexistantMethod');
     }
 
-    public function setFieldMapping($fieldMapping)
+    public function testGetFieldValueMagicCall()
     {
-        // TODO: Implement setFieldMapping() method.
-    }
+        $parameters = array('foo', 'bar');
+        $foo = new FooCall();
 
-    public function isIdentifier()
-    {
-        // TODO: Implement isIdentifier() method.
-    }
-
-    /**
-     * set the parent association mappings information.
-     *
-     * @param array $parentAssociationMappings
-     */
-    public function setParentAssociationMappings(array $parentAssociationMappings)
-    {
-        // TODO: Implement setParentAssociationMappings() method.
-    }
-
-    /**
-     * return the value linked to the description.
-     *
-     * @param  $object
-     *
-     * @return bool|mixed
-     */
-    public function getValue($object)
-    {
-        // TODO: Implement getValue() method.
+        $description = new FieldDescription();
+        $description->setOption('parameters', $parameters);
+        $this->assertSame(array('inexistantMethod', $parameters), $description->getFieldValue($foo, 'inexistantMethod'));
     }
 }

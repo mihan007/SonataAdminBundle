@@ -22,13 +22,24 @@ use Symfony\Component\EventDispatcher\Event;
  * You can register the listener to the event dispatcher by using:
  *   - sonata.admin.event.configure.query
  *   - sonata.admin.event.configure.[admin_code].query  (not implemented yet)
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
  */
 class ConfigureQueryEvent extends Event
 {
+    /**
+     * @var AdminInterface
+     */
     protected $admin;
 
+    /**
+     * @var ProxyQueryInterface
+     */
     protected $proxyQuery;
 
+    /**
+     * @var string
+     */
     protected $context;
 
     /**

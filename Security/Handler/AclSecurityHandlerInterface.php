@@ -15,6 +15,11 @@ use Symfony\Component\Security\Acl\Domain\UserSecurityIdentity;
 use Symfony\Component\Security\Acl\Model\AclInterface;
 use Symfony\Component\Security\Acl\Model\ObjectIdentityInterface;
 
+/**
+ * Interface AclSecurityHandlerInterface.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 interface AclSecurityHandlerInterface extends SecurityHandlerInterface
 {
     /**
@@ -60,7 +65,7 @@ interface AclSecurityHandlerInterface extends SecurityHandlerInterface
      *
      * @param ObjectIdentityInterface $objectIdentity
      *
-     * @return null|\Symfony\Component\Security\Acl\Model\AclInterface or NULL if not found
+     * @return null|AclInterface or NULL if not found
      */
     public function getObjectAcl(ObjectIdentityInterface $objectIdentity);
 

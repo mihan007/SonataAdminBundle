@@ -15,7 +15,9 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 /**
- * AbstractSonataAdminExtension.
+ * Class AbstractSonataAdminExtension.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
  */
 abstract class AbstractSonataAdminExtension extends Extension
 {
@@ -24,6 +26,7 @@ abstract class AbstractSonataAdminExtension extends Extension
      *
      * @param array            $configs
      * @param ContainerBuilder $container
+     * @param array            $defaultSonataDoctrineConfig
      *
      * @return array
      */

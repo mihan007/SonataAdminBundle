@@ -12,27 +12,80 @@
 namespace Sonata\AdminBundle\Datagrid;
 
 /**
- * Pager class.
+ * Class Pager.
  *
- * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
- * @author     Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ * @author  Fabien Potencier <fabien.potencier@symfony-project.com>
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
  */
 abstract class Pager implements \Iterator, \Countable, \Serializable, PagerInterface
 {
+    const TYPE_DEFAULT = 'default';
+    const TYPE_SIMPLE = 'simple';
+
+    /**
+     * @var int
+     */
     protected $page = 1;
+
+    /**
+     * @var int
+     */
     protected $maxPerPage = 0;
+
+    /**
+     * @var int
+     */
     protected $lastPage = 1;
+
+    /**
+     * @var int
+     */
     protected $nbResults = 0;
+
+    /**
+     * @var int
+     */
     protected $cursor = 1;
+
+    /**
+     * @var array
+     */
     protected $parameters = array();
+
+    /**
+     * @var int
+     */
     protected $currentMaxLink = 1;
+
+    /**
+     * @var bool
+     */
     protected $maxRecordLimit = false;
+
+    /**
+     * @var int
+     */
     protected $maxPageLinks = 0;
 
     // used by iterator interface
+    /**
+     * @var array|null
+     */
     protected $results = null;
+
+    /**
+     * @var int
+     */
     protected $resultsCounter = 0;
+
+    /**
+     * @var ProxyQueryInterface|null
+     */
     protected $query = null;
+
+    /**
+     * @var array
+     */
     protected $countColumn = array('id');
 
     /**
@@ -354,9 +407,7 @@ abstract class Pager implements \Iterator, \Countable, \Serializable, PagerInter
     }
 
     /**
-     * Returns the maximum number of page numbers.
-     *
-     * @return int
+     * {@inheritdoc}
      */
     public function getMaxPageLinks()
     {
@@ -364,9 +415,7 @@ abstract class Pager implements \Iterator, \Countable, \Serializable, PagerInter
     }
 
     /**
-     * Sets the maximum number of page numbers.
-     *
-     * @param int $maxPageLinks
+     * {@inheritdoc}
      */
     public function setMaxPageLinks($maxPageLinks)
     {

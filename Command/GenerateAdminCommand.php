@@ -30,12 +30,16 @@ use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
- * @author Marek Stipek <mario.dweller@seznam.cz>
- * @author Simon Cosandey <simon.cosandey@simseo.ch>
+ * Class GenerateAdminCommand.
+ *
+ * @author  Marek Stipek <mario.dweller@seznam.cz>
+ * @author  Simon Cosandey <simon.cosandey@simseo.ch>
  */
 class GenerateAdminCommand extends ContainerAwareCommand
 {
-    /** @var string[] */
+    /**
+     * @var string[]
+     */
     private $managerTypes;
 
     /**
@@ -54,6 +58,14 @@ class GenerateAdminCommand extends ContainerAwareCommand
             ->addOption('services', 'y', InputOption::VALUE_OPTIONAL, 'The services YAML file', 'services.yml')
             ->addOption('id', 'i', InputOption::VALUE_OPTIONAL, 'The admin service ID')
         ;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function isEnabled()
+    {
+        return class_exists('Sensio\\Bundle\\GeneratorBundle\\SensioGeneratorBundle');
     }
 
     /**
@@ -240,7 +252,7 @@ class GenerateAdminCommand extends ContainerAwareCommand
         foreach ($application->getKernel()->getBundles() as $bundle) {
             if (strpos($class, $bundle->getNamespace().'\\') === 0) {
                 return $bundle->getName();
-            }
+            };
         }
 
         return;
@@ -280,7 +292,6 @@ class GenerateAdminCommand extends ContainerAwareCommand
 
         if ($questionHelper instanceof DialogHelper) {
             // @todo remove this BC code for SensioGeneratorBundle 2.3/2.4 after dropping  support for Symfony 2.3
-
             return $questionHelper->askAndValidate($output, $questionHelper->getQuestion($questionText, $default), $validator, false, $default);
         }
 
@@ -291,6 +302,15 @@ class GenerateAdminCommand extends ContainerAwareCommand
         return $questionHelper->ask($input, $output, $question);
     }
 
+    /**
+     * @param InputInterface  $input
+     * @param OutputInterface $output
+     * @param string          $questionText
+     * @param string          $default
+     * @param string          $separator
+     *
+     * @return string
+     */
     private function askConfirmation(InputInterface $input, OutputInterface $output, $questionText, $default, $separator)
     {
         $questionHelper = $this->getQuestionHelper();

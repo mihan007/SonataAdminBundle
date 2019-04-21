@@ -11,6 +11,11 @@
 
 namespace Sonata\AdminBundle\Filter;
 
+/**
+ * Interface FilterFactoryInterface.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 interface FilterFactoryInterface
 {
     /**

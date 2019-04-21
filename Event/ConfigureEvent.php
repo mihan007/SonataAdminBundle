@@ -25,6 +25,8 @@ use Symfony\Component\EventDispatcher\Event;
  * You can register the listener to the event dispatcher by using:
  *   - sonata.admin.event.configure.[form|list|datagrid|show]
  *   - sonata.admin.event.configure.[admin_code].[form|list|datagrid|show] (not implemented yet)
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
  */
 class ConfigureEvent extends Event
 {
@@ -33,10 +35,19 @@ class ConfigureEvent extends Event
     const TYPE_FORM     = 'form';
     const TYPE_LIST     = 'list';
 
+    /**
+     * @var AdminInterface
+     */
     protected $admin;
 
+    /**
+     * @var BaseMapper
+     */
     protected $mapper;
 
+    /**
+     * @var string
+     */
     protected $type;
 
     /**
@@ -60,7 +71,7 @@ class ConfigureEvent extends Event
     }
 
     /**
-     * @return \Sonata\AdminBundle\Admin\AdminInterface
+     * @return AdminInterface
      */
     public function getAdmin()
     {
@@ -68,7 +79,7 @@ class ConfigureEvent extends Event
     }
 
     /**
-     * @return \Sonata\AdminBundle\Mapper\BaseMapper
+     * @return BaseMapper
      */
     public function getMapper()
     {

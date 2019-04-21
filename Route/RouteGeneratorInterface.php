@@ -13,25 +13,30 @@ namespace Sonata\AdminBundle\Route;
 
 use Sonata\AdminBundle\Admin\AdminInterface;
 
+/**
+ * Interface RouteGeneratorInterface.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 interface RouteGeneratorInterface
 {
     /**
-     * @param \Sonata\AdminBundle\Admin\AdminInterface $admin
-     * @param string                                   $name
-     * @param array                                    $parameters
-     * @param bool                                     $absolute
+     * @param AdminInterface $admin
+     * @param string         $name
+     * @param array          $parameters
+     * @param bool           $absolute
      *
      * @return string
      */
     public function generateUrl(AdminInterface $admin, $name, array $parameters = array(), $absolute = false);
 
     /**
-     * @param \Sonata\AdminBundle\Admin\AdminInterface $admin
-     * @param string                                   $name
-     * @param array                                    $parameters
-     * @param bool                                     $absolute
+     * @param AdminInterface $admin
+     * @param string         $name
+     * @param array          $parameters
+     * @param bool           $absolute
      *
-     * @return string
+     * @return array
      */
     public function generateMenuUrl(AdminInterface $admin, $name, array $parameters = array(), $absolute = false);
 

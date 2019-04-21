@@ -2,8 +2,8 @@ Creating a Custom Admin Action
 ==============================
 
 This is a full working example of creating a custom list action for SonataAdmin.
-The example is based on an existing ``CarAdmin`` class in an ``AcmeDemoBundle``. It is
-assumed you already have an admin service up and running.
+The example is based on an existing ``CarAdmin`` class in an ``AppBundle``.
+It is assumed you already have an admin service up and running.
 
 The recipe
 ----------
@@ -22,13 +22,12 @@ Extending the Admin Controller
 
 First you need to create your own Controller extending the one from SonataAdmin
 
-
 .. code-block:: php
 
     <?php
-    // src/Acme/DemoBundle/Controller/CRUDController.php
+    // src/AppBundle/Controller/CRUDController.php
 
-    namespace Acme\DemoBundle\Controller;
+    namespace AppBundle\Controller;
 
     use Sonata\AdminBundle\Controller\CRUDController as Controller;
 
@@ -40,43 +39,37 @@ First you need to create your own Controller extending the one from SonataAdmin
 Admin classes by default use the ``SonataAdmin:CRUD`` controller, this is the third parameter
 of an admin service definition, you need to change it to your own.
 
+Register the Admin as a Service
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Either by using XML:
 
 .. code-block:: xml
 
-        <!-- src/Acme/DemoBundle/Resources/config/admin.xml -->
-        ...
+        <!-- src/AppBundle/Resources/config/admin.xml -->
 
-        <service id="acme.demo.admin.car" class="Acme\DemoBundle\Admin\CarAdmin">
-
+        <service id="app.admin.car" class="AppBundle\Admin\CarAdmin">
             <tag name="sonata.admin" manager_type="orm" group="Demo" label="Car" />
-
             <argument />
-            <argument>Acme\DemoBundle\Entity\Car</argument>
-            <argument>AcmeDemoBundle:CRUD</argument>
-
-            ...
-
+            <argument>AppBundle\Entity\Car</argument>
+            <argument>AppBundle:CRUD</argument>
         </service>
 
-        ...
-
-Or by overwriting the configuration in your ``config.yml``:
+or by adding it to your ``admin.yml``:
 
 .. code-block:: yaml
 
-    # app/config/config.yml
+    # src/AppBundle/Resources/config/admin.yml
 
     services:
-        acme.demo.admin.car:
-            class: Acme\DemoBundle\Admin\CarAdmin
+        app.admin.car:
+            class: AppBundle\Admin\CarAdmin
             tags:
                 - { name: sonata.admin, manager_type: orm, group: Demo, label: Car }
             arguments:
                 - null
-                - Acme\DemoBundle\Entity\Car
-                - AcmeDemoBundle:CRUD
-
+                - AppBundle\Entity\Car
+                - AppBundle:CRUD
 
 For more information about service configuration please refer to Step 3 of :doc:`../reference/getting_started`
 
@@ -88,9 +81,10 @@ to implement a ``clone`` action.
 
 .. code-block:: php
 
-    <?php // src/Acme/DemoBundle/Controller/CRUDController.php
+    <?php
+    // src/AppBundle/Controller/CRUDController.php
 
-    namespace Acme\DemoBundle\Controller;
+    namespace AppBundle\Controller;
 
     use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
     use Sonata\AdminBundle\Controller\CRUDController as Controller;
@@ -106,20 +100,45 @@ to implement a ``clone`` action.
                 throw new NotFoundHttpException(sprintf('unable to find the object with id : %s', $id));
             }
 
-            $clonedObject = clone $object;  // Careful, you may need to overload the __clone method of your object
-                                            // to set its id to null
-            $clonedObject->setName($object->getName()." (Clone)");
+            // Be careful, you may need to overload the __clone method of your object
+            // to set its id to null !
+            $clonedObject = clone $object;
+
+            $clonedObject->setName($object->getName().' (Clone)');
 
             $this->admin->create($clonedObject);
 
             $this->addFlash('sonata_flash_success', 'Cloned successfully');
 
             return new RedirectResponse($this->admin->generateUrl('list'));
+
+            // if you have a filtered list and want to keep your filters after the redirect
+            // return new RedirectResponse($this->admin->generateUrl('list', $this->admin->getFilterParameters()));
         }
     }
 
 Here we first get the id of the object, see if it exists then clone it and insert the clone
 as a new object. Finally we set a flash message indicating success and redirect to the list view.
+
+If you want to add the current filter parameters to the redirect url you can add them to the `generateUrl` method:
+
+.. code-block:: php
+
+    return new RedirectResponse($this->admin->generateUrl('list', array('filter' => $this->admin->getFilterParameters())));
+
+Using template in new controller
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to render something here you can create new template anywhere, extend sonata layout
+and use `sonata_admin_content` block.
+
+.. code-block:: html+jinja
+
+    {% extends 'SonataAdminBundle::standard_layout.html.twig' %}
+
+    {% block sonata_admin_content %}
+        Your content here
+    {% endblock %}
 
 Create a template for the new action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -130,7 +149,7 @@ Admin Controller.
 
 .. code-block:: html+jinja
 
-    {# src/Acme/DemoBundle/Resources/views/CRUD/list__action_clone.html.twig #}
+    {# src/AppBundle/Resources/views/CRUD/list__action_clone.html.twig #}
 
     <a class="btn btn-sm" href="{{ admin.generateObjectUrl('clone', object) }}">clone</a>
 
@@ -146,13 +165,16 @@ You have to add the new route in ``configureRoutes``:
 
 .. code-block:: php
 
+    // ...
+    use Sonata\AdminBundle\Route\RouteCollection;
+
     protected function configureRoutes(RouteCollection $collection)
     {
         $collection->add('clone', $this->getRouterIdParameter().'/clone');
     }
 
-This gives us a route like ``../admin/sonata/demo/car/1/clone``.
-You could also just write ``$collection->add('clone');`` to get a route like ``../admin/sonata/demo/car/clone?id=1``
+This gives us a route like ``../admin/app/car/1/clone``.
+You could also just write ``$collection->add('clone');`` to get a route like ``../admin/app/car/clone?id=1``
 
 Next we have to add the action in ``configureListFields`` specifying the template we created.
 
@@ -166,8 +188,11 @@ Next we have to add the action in ``configureListFields`` specifying the templat
 
             ->add('_action', 'actions', array(
                 'actions' => array(
-                    'Clone' => array(
-                        'template' => 'AcmeDemoBundle:CRUD:list__action_clone.html.twig'
+
+                    // ...
+
+                    'clone' => array(
+                        'template' => 'AppBundle:CRUD:list__action_clone.html.twig'
                     )
                 )
             ))
@@ -180,17 +205,33 @@ The full ``CarAdmin.php`` example looks like this:
 .. code-block:: php
 
     <?php
-    // src/Acme/DemoBundle/Admin/CarAdmin.php
+    // src/AppBundle/Admin/CarAdmin.php
 
-    namespace Acme\DemoBundle\Admin;
+    namespace AppBundle\Admin;
 
-    // ...
-
+    use Sonata\AdminBundle\Admin\Admin;
+    use Sonata\AdminBundle\Datagrid\DatagridMapper;
+    use Sonata\AdminBundle\Datagrid\ListMapper;
+    use Sonata\AdminBundle\Form\FormMapper;
     use Sonata\AdminBundle\Route\RouteCollection;
+    use Sonata\AdminBundle\Show\ShowMapper;
 
     class CarAdmin extends Admin
     {
-         // ...
+        protected function configureRoutes(RouteCollection $collection)
+        {
+            $collection->add('clone', $this->getRouterIdParameter().'/clone');
+        }
+
+        protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+        {
+            // ...
+        }
+
+        protected function configureFormFields(FormMapper $formMapper)
+        {
+            // ...
+        }
 
         protected function configureListFields(ListMapper $listMapper)
         {
@@ -201,15 +242,18 @@ The full ``CarAdmin.php`` example looks like this:
                 ->add('createdAt')
                 ->add('_action', 'actions', array(
                     'actions' => array(
-                        'Clone' => array(
-                            'template' => 'AcmeDemoBundle:CRUD:list__action_clone.html.twig'
+                        'show' => array(),
+                        'edit' => array(),
+                        'delete' => array(),
+                        'clone' => array(
+                            'template' => 'AppBundle:CRUD:list__action_clone.html.twig'
                         )
                     )
                 ));
         }
 
-        protected function configureRoutes(RouteCollection $collection)
+        protected function configureShowFields(ShowMapper $showMapper)
         {
-            $collection->add('clone', $this->getRouterIdParameter().'/clone');
+            // ...
         }
     }

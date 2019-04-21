@@ -11,6 +11,11 @@
 
 namespace Sonata\AdminBundle\Exception;
 
+/**
+ * Class ModelManagerException.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 class ModelManagerException extends \Exception
 {
 }

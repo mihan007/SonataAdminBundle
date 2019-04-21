@@ -9,7 +9,10 @@
  * file that was distributed with this source code.
  */
 
-namespace Sonata\AdminBundle\Route;
+namespace Sonata\AdminBundle\Tests\Route;
+
+use Sonata\AdminBundle\Route\AdminPoolLoader;
+use Sonata\AdminBundle\Route\RouteCollection;
 
 /**
  * @author Andrej Hudec <pulzarraider@gmail.com>

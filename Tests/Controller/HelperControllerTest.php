@@ -86,7 +86,7 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
 
         $twig = new \Twig_Environment($this->getMock('\Twig_LoaderInterface'));
         $helper = new AdminHelper($pool);
-        $validator = $this->getMock('Symfony\Component\Validator\ValidatorInterface');
+        $validator = $this->getMock('Symfony\Component\Validator\Validator\ValidatorInterface');
         $this->controller = new HelperController($twig, $pool, $helper, $validator);
 
         // php 5.3 BC
@@ -99,17 +99,14 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
                     case 'foo.admin':
                         return $admin;
                 }
-
-                return;
             }));
-
-        return;
     }
 
     /**
      * @expectedException Symfony\Component\HttpKernel\Exception\NotFoundHttpException
+     * @dataProvider getValidatorInterfaces
      */
-    public function testgetShortObjectDescriptionActionInvalidAdmin()
+    public function testgetShortObjectDescriptionActionInvalidAdmin($validatorInterface)
     {
         $container = $this->getMock('Symfony\Component\DependencyInjection\ContainerInterface');
         $twig = new \Twig_Environment($this->getMock('\Twig_LoaderInterface'));
@@ -121,7 +118,7 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
         $pool = new Pool($container, 'title', 'logo');
         $pool->setAdminServiceIds(array('sonata.post.admin'));
         $helper = new AdminHelper($pool);
-        $validator = $this->getMock('Symfony\Component\Validator\ValidatorInterface');
+        $validator = $this->getMock($validatorInterface);
         $controller = new HelperController($twig, $pool, $helper, $validator);
 
         $controller->getShortObjectDescriptionAction($request);
@@ -130,8 +127,10 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
     /**
      * @expectedException \RuntimeException
      * @exceptionMessage Invalid format
+     *
+     * @dataProvider getValidatorInterfaces
      */
-    public function testgetShortObjectDescriptionActionObjectDoesNotExist()
+    public function testgetShortObjectDescriptionActionObjectDoesNotExist($validatorInterface)
     {
         $admin = $this->getMock('Sonata\AdminBundle\Admin\AdminInterface');
         $admin->expects($this->once())->method('setUniqid');
@@ -152,13 +151,16 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
 
         $helper = new AdminHelper($pool);
 
-        $validator = $this->getMock('Symfony\Component\Validator\ValidatorInterface');
+        $validator = $this->getMock($validatorInterface);
         $controller = new HelperController($twig, $pool, $helper, $validator);
 
         $controller->getShortObjectDescriptionAction($request);
     }
 
-    public function testgetShortObjectDescriptionActionEmptyObjectId()
+    /**
+     * @dataProvider getValidatorInterfaces
+     */
+    public function testgetShortObjectDescriptionActionEmptyObjectId($validatorInterface)
     {
         $admin = $this->getMock('Sonata\AdminBundle\Admin\AdminInterface');
         $admin->expects($this->once())->method('setUniqid');
@@ -180,13 +182,16 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
 
         $helper = new AdminHelper($pool);
 
-        $validator = $this->getMock('Symfony\Component\Validator\ValidatorInterface');
+        $validator = $this->getMock($validatorInterface);
         $controller = new HelperController($twig, $pool, $helper, $validator);
 
         $controller->getShortObjectDescriptionAction($request);
     }
 
-    public function testgetShortObjectDescriptionActionObject()
+    /**
+     * @dataProvider getValidatorInterfaces
+     */
+    public function testgetShortObjectDescriptionActionObject($validatorInterface)
     {
         $mockTemplate = 'AdminHelperTest:mock-short-object-description.html.twig';
 
@@ -226,7 +231,7 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
 
         $helper = new AdminHelper($pool);
 
-        $validator = $this->getMock('Symfony\Component\Validator\ValidatorInterface');
+        $validator = $this->getMock($validatorInterface);
 
         $controller = new HelperController($twig, $pool, $helper, $validator);
 
@@ -236,7 +241,10 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($expected, $response->getContent());
     }
 
-    public function testsetObjectFieldValueAction()
+    /**
+     * @dataProvider getValidatorInterfaces
+     */
+    public function testsetObjectFieldValueAction($validatorInterface)
     {
         $object = new AdminControllerHelper_Foo();
 
@@ -270,7 +278,7 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
 
         $helper = new AdminHelper($pool);
 
-        $validator = $this->getMock('Symfony\Component\Validator\ValidatorInterface');
+        $validator = $this->getMock($validatorInterface);
 
         $controller = new HelperController($twig, $pool, $helper, $validator);
 
@@ -279,7 +287,10 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('{"status":"OK","content":"\u003Cfoo \/\u003E"}', $response->getContent());
     }
 
-    public function testappendFormFieldElementAction()
+    /**
+     * @dataProvider getValidatorInterfaces
+     */
+    public function testappendFormFieldElementAction($validatorInterface)
     {
         $object = new AdminControllerHelper_Foo();
 
@@ -325,7 +336,7 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
         $pool = new Pool($container, 'title', 'logo');
         $pool->setAdminServiceIds(array('sonata.post.admin'));
 
-        $validator = $this->getMock('Symfony\Component\Validator\ValidatorInterface');
+        $validator = $this->getMock($validatorInterface);
 
         $mockView = $this->getMockBuilder('Symfony\Component\Form\FormView')
             ->disableOriginalConstructor()
@@ -351,7 +362,10 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
         $this->isInstanceOf('Symfony\Component\HttpFoundation\Response', $response);
     }
 
-    public function testretrieveFormFieldElementAction()
+    /**
+     * @dataProvider getValidatorInterfaces
+     */
+    public function testretrieveFormFieldElementAction($validatorInterface)
     {
         $object = new AdminControllerHelper_Foo();
 
@@ -406,9 +420,7 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
         $pool = new Pool($container, 'title', 'logo');
         $pool->setAdminServiceIds(array('sonata.post.admin'));
 
-        $validator = $this->getMock('Symfony\Component\Validator\ValidatorInterface');
-
-        $dispatcher = $this->getMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
+        $validator = $this->getMock($validatorInterface);
 
         $helper = $this->getMock('Sonata\AdminBundle\Admin\AdminHelper', array('getChildFormView'), array($pool));
         $helper->expects($this->once())->method('getChildFormView')->will($this->returnValue($mockView));
@@ -419,7 +431,10 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
         $this->isInstanceOf('Symfony\Component\HttpFoundation\Response', $response);
     }
 
-    public function testSetObjectFieldValueActionWithViolations()
+    /**
+     * @dataProvider getValidatorInterfaces
+     */
+    public function testSetObjectFieldValueActionWithViolations($validatorInterface)
     {
         $bar = new AdminControllerHelper_Bar();
 
@@ -456,11 +471,12 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
             new ConstraintViolation('error2', null, array(), null, 'enabled', null),
         ));
 
-        $validator = $this->getMock('Symfony\Component\Validator\ValidatorInterface');
+        $validator = $this->getMock($validatorInterface);
+
         $validator
             ->expects($this->once())
-            ->method('validateProperty')
-            ->with($bar, 'enabled')
+            ->method('validate')
+            ->with($bar)
             ->will($this->returnValue($violations))
         ;
 
@@ -488,7 +504,31 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
             }));
 
         $request = new Request(array(
-            'code'     => 'foo.admin',
+            'admin_code'     => 'foo.admin',
+        ), array(), array(), array(), array(), array('REQUEST_METHOD' => 'GET', 'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest'));
+
+        $this->controller->retrieveAutocompleteItemsAction($request);
+    }
+
+    /**
+     * @expectedException Symfony\Component\Security\Core\Exception\AccessDeniedException
+     * @exceptionMessage Invalid format
+     */
+    public function testRetrieveFilterAutocompleteItemsActionNotGranted()
+    {
+        $this->admin->expects($this->exactly(1))
+            ->method('isGranted')
+            ->will($this->returnCallback(function ($operation) {
+                if ($operation == 'LIST') {
+                    return false;
+                }
+
+                return;
+            }));
+
+        $request = new Request(array(
+            'admin_code'     => 'foo.admin',
+            '_context'       => 'filter',
         ), array(), array(), array(), array(), array('REQUEST_METHOD' => 'GET', 'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest'));
 
         $this->controller->retrieveAutocompleteItemsAction($request);
@@ -508,10 +548,6 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
         $entity = new Foo();
 
         $fieldDescription = $this->getMock('Sonata\AdminBundle\Admin\FieldDescriptionInterface');
-
-        $fieldDescription->expects($this->once())
-            ->method('getType')
-            ->will($this->returnValue('sonata_type_model_autocomplete'));
 
         $fieldDescription->expects($this->once())
             ->method('getTargetEntity')
@@ -561,8 +597,8 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(true));
 
         $request = new Request(array(
-            'code'  => 'foo.admin',
-            'field' => 'barField',
+            'admin_code'  => 'foo.admin',
+            'field'       => 'barField',
         ), array(), array(), array(), array(), array('REQUEST_METHOD' => 'GET', 'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest'));
 
         $this->controller->retrieveAutocompleteItemsAction($request);
@@ -578,13 +614,7 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
             ->with('CREATE')
             ->will($this->returnValue(true));
 
-        $entity = new Foo();
-
         $fieldDescription = $this->getMock('Sonata\AdminBundle\Admin\FieldDescriptionInterface');
-
-        $fieldDescription->expects($this->once())
-            ->method('getType')
-            ->will($this->returnValue('sonata_type_model_autocomplete'));
 
         $fieldDescription->expects($this->once())
             ->method('getTargetEntity')
@@ -658,15 +688,34 @@ class HelperControllerTest extends \PHPUnit_Framework_TestCase
                     case 'to_string_callback':
                         return;
                 }
-
-                return;
             }));
 
         $request = new Request(array(
-            'code'  => 'foo.admin',
-            'field' => 'barField',
+            'admin_code'  => 'foo.admin',
+            'field'       => 'barField',
         ), array(), array(), array(), array(), array('REQUEST_METHOD' => 'GET', 'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest'));
 
         $this->controller->retrieveAutocompleteItemsAction($request);
+    }
+
+    /**
+     * Symfony Validator has 2 API version (2.4 and 2.5)
+     * This data provider ensure tests pass on each one.
+     */
+    public function getValidatorInterfaces()
+    {
+        $data = array();
+
+        // For Symfony <= 2.8
+        if (interface_exists('Symfony\Component\Validator\ValidatorInterface')) {
+            $data['2.4'] = array('Symfony\Component\Validator\ValidatorInterface');
+        }
+
+        // For Symfony >= 2.5
+        if (interface_exists('Symfony\Component\Validator\Validator\ValidatorInterface')) {
+            $data['2.5'] = array('Symfony\Component\Validator\Validator\ValidatorInterface');
+        }
+
+        return $data;
     }
 }

@@ -14,12 +14,9 @@ namespace Sonata\AdminBundle\Tests\Show;
 use Sonata\AdminBundle\Admin\Admin;
 use Sonata\AdminBundle\Admin\AdminInterface;
 use Sonata\AdminBundle\Admin\FieldDescriptionCollection;
+use Sonata\AdminBundle\Builder\ShowBuilderInterface;
 use Sonata\AdminBundle\Show\ShowMapper;
 use Sonata\AdminBundle\Translator\NoopLabelTranslatorStrategy;
-
-class TestAdmin extends Admin
-{
-}
 
 /**
  * Test for ShowMapper.
@@ -39,7 +36,7 @@ class ShowMapperTest extends \PHPUnit_Framework_TestCase
     private $admin;
 
     /**
-     * @var Sonata\AdminBundle\Builder\ShowBuilderInterface
+     * @var ShowBuilderInterface
      */
     private $showBuilder;
 
@@ -52,6 +49,11 @@ class ShowMapperTest extends \PHPUnit_Framework_TestCase
      * @var array
      */
     private $groups;
+
+    /**
+     * @var array
+     */
+    private $listShowFields;
 
     public function setUp()
     {
@@ -68,9 +70,11 @@ class ShowMapperTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(array()));
 
         $this->groups = array();
+        $this->listShowFields = array();
 
         // php 5.3 BC
         $groups = &$this->groups;
+        $listShowFields = &$this->listShowFields;
 
         $this->admin->expects($this->any())
             ->method('getShowGroups')
@@ -117,6 +121,18 @@ class ShowMapperTest extends \PHPUnit_Framework_TestCase
             ->method('getLabelTranslatorStrategy')
             ->will($this->returnValue($labelTranslatorStrategy));
 
+        $this->admin->expects($this->any())
+            ->method('hasShowFieldDescription')
+            ->will($this->returnCallback(function ($name) use (&$listShowFields) {
+                if (isset($listShowFields[$name])) {
+                    return true;
+                } else {
+                    $listShowFields[$name] = true;
+
+                    return false;
+                }
+            }));
+
         $this->showBuilder->expects($this->any())
             ->method('addField')
             ->will($this->returnCallback(function ($list, $type, $fieldDescription, $admin) {
@@ -158,6 +174,144 @@ class ShowMapperTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('fooName', $fieldDescription->getOption('label'));
     }
 
+    public function testIfTrueApply()
+    {
+        $this->showMapper->ifTrue(true);
+        $this->showMapper->add('fooName');
+        $this->showMapper->ifEnd();
+
+        $this->assertTrue($this->showMapper->has('fooName'));
+        $fieldDescription = $this->showMapper->get('fooName');
+
+        $this->assertInstanceOf('Sonata\AdminBundle\Admin\FieldDescriptionInterface', $fieldDescription);
+        $this->assertSame('fooName', $fieldDescription->getName());
+        $this->assertSame('fooName', $fieldDescription->getOption('label'));
+    }
+
+    public function testIfTrueNotApply()
+    {
+        $this->showMapper->ifTrue(false);
+        $this->showMapper->add('fooName');
+        $this->showMapper->ifEnd();
+
+        $this->assertFalse($this->showMapper->has('fooName'));
+    }
+
+    public function testIfTrueCombination()
+    {
+        $this->showMapper->ifTrue(false);
+        $this->showMapper->add('fooName');
+        $this->showMapper->ifEnd();
+        $this->showMapper->add('barName');
+
+        $this->assertFalse($this->showMapper->has('fooName'));
+        $this->assertTrue($this->showMapper->has('barName'));
+        $fieldDescription = $this->showMapper->get('barName');
+
+        $this->assertInstanceOf('Sonata\AdminBundle\Admin\FieldDescriptionInterface', $fieldDescription);
+        $this->assertSame('barName', $fieldDescription->getName());
+        $this->assertSame('barName', $fieldDescription->getOption('label'));
+    }
+
+    public function testIfFalseApply()
+    {
+        $this->showMapper->ifFalse(false);
+        $this->showMapper->add('fooName');
+        $this->showMapper->ifEnd();
+
+        $this->assertTrue($this->showMapper->has('fooName'));
+        $fieldDescription = $this->showMapper->get('fooName');
+
+        $this->assertInstanceOf('Sonata\AdminBundle\Admin\FieldDescriptionInterface', $fieldDescription);
+        $this->assertSame('fooName', $fieldDescription->getName());
+        $this->assertSame('fooName', $fieldDescription->getOption('label'));
+    }
+
+    public function testIfFalseNotApply()
+    {
+        $this->showMapper->ifFalse(true);
+        $this->showMapper->add('fooName');
+        $this->showMapper->ifEnd();
+
+        $this->assertFalse($this->showMapper->has('fooName'));
+    }
+
+    public function testIfFalseCombination()
+    {
+        $this->showMapper->ifFalse(true);
+        $this->showMapper->add('fooName');
+        $this->showMapper->ifEnd();
+        $this->showMapper->add('barName');
+
+        $this->assertFalse($this->showMapper->has('fooName'));
+        $this->assertTrue($this->showMapper->has('barName'));
+        $fieldDescription = $this->showMapper->get('barName');
+
+        $this->assertInstanceOf('Sonata\AdminBundle\Admin\FieldDescriptionInterface', $fieldDescription);
+        $this->assertSame('barName', $fieldDescription->getName());
+        $this->assertSame('barName', $fieldDescription->getOption('label'));
+    }
+
+    /**
+     * @expectedException        RuntimeException
+     * @expectedExceptionMessage Cannot nest ifTrue or ifFalse call
+     */
+    public function testIfTrueNested()
+    {
+        $this->showMapper->ifTrue(true);
+        $this->showMapper->ifTrue(true);
+    }
+
+    /**
+     * @expectedException        RuntimeException
+     * @expectedExceptionMessage Cannot nest ifTrue or ifFalse call
+     */
+    public function testIfFalseNested()
+    {
+        $this->showMapper->ifFalse(false);
+        $this->showMapper->ifFalse(false);
+    }
+
+    /**
+     * @expectedException        RuntimeException
+     * @expectedExceptionMessage Cannot nest ifTrue or ifFalse call
+     */
+    public function testIfCombinationNested()
+    {
+        $this->showMapper->ifTrue(true);
+        $this->showMapper->ifFalse(false);
+    }
+
+    /**
+     * @expectedException        RuntimeException
+     * @expectedExceptionMessage Cannot nest ifTrue or ifFalse call
+     */
+    public function testIfFalseCombinationNested2()
+    {
+        $this->showMapper->ifFalse(false);
+        $this->showMapper->ifTrue(true);
+    }
+
+    /**
+     * @expectedException        RuntimeException
+     * @expectedExceptionMessage Cannot nest ifTrue or ifFalse call
+     */
+    public function testIfFalseCombinationNested3()
+    {
+        $this->showMapper->ifFalse(true);
+        $this->showMapper->ifTrue(false);
+    }
+
+    /**
+     * @expectedException        RuntimeException
+     * @expectedExceptionMessage Cannot nest ifTrue or ifFalse call
+     */
+    public function testIfFalseCombinationNested4()
+    {
+        $this->showMapper->ifTrue(false);
+        $this->showMapper->ifFalse(true);
+    }
+
     public function testAddRemove()
     {
         $this->assertFalse($this->showMapper->has('fooName'));
@@ -184,6 +338,22 @@ class ShowMapperTest extends \PHPUnit_Framework_TestCase
         $this->fail('Failed asserting that exception of type "\RuntimeException" is thrown.');
     }
 
+    public function testAddDuplicateFieldNameException()
+    {
+        $name = 'name';
+
+        try {
+            $this->showMapper->add($name);
+            $this->showMapper->add($name);
+        } catch (\RuntimeException $e) {
+            $this->assertContains(sprintf('Duplicate field name "%s" in show mapper. Names should be unique.', $name), $e->getMessage());
+
+            return;
+        }
+
+        $this->fail('Failed asserting that duplicate field name exception of type "\RuntimeException" is thrown.');
+    }
+
     public function testReorder()
     {
         $this->assertSame(array(), $this->admin->getShowGroups());
@@ -206,6 +376,7 @@ class ShowMapperTest extends \PHPUnit_Framework_TestCase
                 'description'        => false,
                 'translation_domain' => null,
                 'name'               => 'Group1',
+                'box_class'          => 'box box-primary',
                 'fields'             => array('fooName1' => 'fooName1', 'fooName2' => 'fooName2', 'fooName3' => 'fooName3', 'fooName4' => 'fooName4'),
             ), ), $this->admin->getShowGroups());
 
@@ -219,6 +390,7 @@ class ShowMapperTest extends \PHPUnit_Framework_TestCase
                 'description'        => false,
                 'translation_domain' => null,
                 'name'               => 'Group1',
+                'box_class'          => 'box box-primary',
                 'fields'             => array('fooName3' => 'fooName3', 'fooName2' => 'fooName2', 'fooName1' => 'fooName1', 'fooName4' => 'fooName4'),
             ), ), true), print_r($this->admin->getShowGroups(), true));
     }

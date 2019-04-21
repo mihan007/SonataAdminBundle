@@ -16,8 +16,14 @@ use Sonata\AdminBundle\Admin\FieldDescriptionInterface;
 use Sonata\AdminBundle\Filter\FilterInterface;
 use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
-use Symfony\Component\Form\FormBuilder;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormInterface;
 
+/**
+ * Class Datagrid.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 class Datagrid implements DatagridInterface
 {
     /**
@@ -27,30 +33,54 @@ class Datagrid implements DatagridInterface
      */
     protected $filters = array();
 
+    /**
+     * @var array
+     */
     protected $values;
 
+    /**
+     * @var FieldDescriptionCollection
+     */
     protected $columns;
 
+    /**
+     * @var PagerInterface
+     */
     protected $pager;
 
+    /**
+     * @var bool
+     */
     protected $bound = false;
 
+    /**
+     * @var ProxyQueryInterface
+     */
     protected $query;
 
+    /**
+     * @var FormBuilderInterface
+     */
     protected $formBuilder;
 
+    /**
+     * @var FormInterface
+     */
     protected $form;
 
+    /**
+     * @var array
+     */
     protected $results;
 
     /**
      * @param ProxyQueryInterface        $query
      * @param FieldDescriptionCollection $columns
      * @param PagerInterface             $pager
-     * @param FormBuilder                $formBuilder
+     * @param FormBuilderInterface       $formBuilder
      * @param array                      $values
      */
-    public function __construct(ProxyQueryInterface $query, FieldDescriptionCollection $columns, PagerInterface $pager, FormBuilder $formBuilder, array $values = array())
+    public function __construct(ProxyQueryInterface $query, FieldDescriptionCollection $columns, PagerInterface $pager, FormBuilderInterface $formBuilder, array $values = array())
     {
         $this->pager       = $pager;
         $this->query       = $query;
@@ -234,6 +264,21 @@ class Datagrid implements DatagridInterface
     {
         foreach ($this->filters as $name => $filter) {
             if ($filter->isActive()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function hasDisplayableFilters()
+    {
+        foreach ($this->filters as $name => $filter) {
+            $showFilter = $filter->getOption('show_filter', null);
+            if (($filter->isActive() && $showFilter === null) || ($showFilter === true)) {
                 return true;
             }
         }

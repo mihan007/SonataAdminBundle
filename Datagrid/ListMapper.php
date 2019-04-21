@@ -18,10 +18,16 @@ use Sonata\AdminBundle\Builder\ListBuilderInterface;
 use Sonata\AdminBundle\Mapper\BaseMapper;
 
 /**
+ * Class ListMapper
  * This class is used to simulate the Form API.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
  */
 class ListMapper extends BaseMapper
 {
+    /**
+     * @var FieldDescriptionCollection
+     */
     protected $list;
 
     /**
@@ -47,7 +53,7 @@ class ListMapper extends BaseMapper
         $fieldDescriptionOptions['identifier'] = true;
 
         if (!isset($fieldDescriptionOptions['route']['name'])) {
-            $routeName = $this->admin->isGranted('EDIT') ? 'edit' : 'show';
+            $routeName = ($this->admin->isGranted('EDIT') && $this->admin->hasRoute('edit')) ? 'edit' : 'show';
             $fieldDescriptionOptions['route']['name'] = $routeName;
         }
 
@@ -80,6 +86,11 @@ class ListMapper extends BaseMapper
             }
         }
 
+        // Ensure batch and action pseudo-fields are tagged as virtual
+        if (in_array($type, array('actions', 'batch', 'select'))) {
+            $fieldDescriptionOptions['virtual_field'] = true;
+        }
+
         if ($name instanceof FieldDescriptionInterface) {
             $fieldDescription = $name;
             $fieldDescription->mergeOptions($fieldDescriptionOptions);
@@ -108,9 +119,7 @@ class ListMapper extends BaseMapper
     }
 
     /**
-     * @param string $name
-     *
-     * @return FieldDescriptionInterface
+     * {@inheritdoc}
      */
     public function get($name)
     {
@@ -118,9 +127,7 @@ class ListMapper extends BaseMapper
     }
 
     /**
-     * @param string $key
-     *
-     * @return bool
+     * {@inheritdoc}
      */
     public function has($key)
     {
@@ -128,9 +135,7 @@ class ListMapper extends BaseMapper
     }
 
     /**
-     * @param string $key
-     *
-     * @return ListMapper
+     * {@inheritdoc}
      */
     public function remove($key)
     {
@@ -141,9 +146,7 @@ class ListMapper extends BaseMapper
     }
 
     /**
-     * @param array $keys field names
-     *
-     * @return ListMapper
+     * {@inheritdoc}
      */
     public function reorder(array $keys)
     {

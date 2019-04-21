@@ -17,7 +17,9 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * @author Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ * Class ExtensionCompilerPass.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
  */
 class ExtensionCompilerPass implements CompilerPassInterface
 {
@@ -83,7 +85,7 @@ class ExtensionCompilerPass implements CompilerPassInterface
     protected function getExtensionsForAdmin($id, Definition $admin, ContainerBuilder $container, array $extensionMap)
     {
         $extensions = array();
-        $class = $classReflection = $subjectReflection = null;
+        $classReflection = $subjectReflection = null;
 
         $excludes = $extensionMap['excludes'];
         unset($extensionMap['excludes']);
@@ -120,6 +122,12 @@ class ExtensionCompilerPass implements CompilerPassInterface
                         $extensions = array_merge($extensions, $extensionList);
                     }
                 }
+
+                if ('uses' == $type) {
+                    if ($this->hasTrait($classReflection, $subject)) {
+                        $extensions = array_merge($extensions, $extensionList);
+                    }
+                }
             }
         }
 
@@ -151,11 +159,12 @@ class ExtensionCompilerPass implements CompilerPassInterface
     protected function flattenExtensionConfiguration(array $config)
     {
         $extensionMap = array(
-            'excludes'      => array(),
-            'admins'        => array(),
-            'implements'    => array(),
-            'extends'       => array(),
-            'instanceof'    => array(),
+            'excludes'   => array(),
+            'admins'     => array(),
+            'implements' => array(),
+            'extends'    => array(),
+            'instanceof' => array(),
+            'uses'       => array(),
         );
 
         foreach ($config as $extension => $options) {
@@ -170,5 +179,24 @@ class ExtensionCompilerPass implements CompilerPassInterface
         }
 
         return $extensionMap;
+    }
+
+    /**
+     * @param \ReflectionClass $class
+     * @param                  $traitName
+     *
+     * @return bool
+     */
+    protected function hasTrait(\ReflectionClass $class, $traitName)
+    {
+        if (in_array($traitName, $class->getTraitNames())) {
+            return true;
+        }
+
+        if (!$parentClass = $class->getParentClass()) {
+            return false;
+        }
+
+        return $this->hasTrait($parentClass, $traitName);
     }
 }

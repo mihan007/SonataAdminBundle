@@ -12,22 +12,40 @@
 namespace Sonata\AdminBundle\Security\Handler;
 
 use Sonata\AdminBundle\Admin\AdminInterface;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationCredentialsNotFoundException;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 
+/**
+ * Class RoleSecurityHandler.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 class RoleSecurityHandler implements SecurityHandlerInterface
 {
-    protected $securityContext;
+    /**
+     * @var AuthorizationCheckerInterface|SecurityContextInterface
+     */
+    protected $authorizationChecker;
 
+    /**
+     * @var array
+     */
     protected $superAdminRoles;
 
     /**
-     * @param \Symfony\Component\Security\Core\SecurityContextInterface $securityContext
-     * @param array                                                     $superAdminRoles
+     * @param AuthorizationCheckerInterface|SecurityContextInterface $authorizationChecker
+     * @param array                                                  $superAdminRoles
+     *
+     * @todo Go back to signature class check when bumping requirements to SF 2.6+
      */
-    public function __construct(SecurityContextInterface $securityContext, array $superAdminRoles)
+    public function __construct($authorizationChecker, array $superAdminRoles)
     {
-        $this->securityContext = $securityContext;
+        if (!$authorizationChecker instanceof AuthorizationCheckerInterface && !$authorizationChecker instanceof SecurityContextInterface) {
+            throw new \InvalidArgumentException('Argument 1 should be an instance of Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface or Symfony\Component\Security\Core\SecurityContextInterface');
+        }
+
+        $this->authorizationChecker = $authorizationChecker;
         $this->superAdminRoles = $superAdminRoles;
     }
 
@@ -45,8 +63,8 @@ class RoleSecurityHandler implements SecurityHandlerInterface
         }
 
         try {
-            return $this->securityContext->isGranted($this->superAdminRoles)
-                || $this->securityContext->isGranted($attributes, $object);
+            return $this->authorizationChecker->isGranted($this->superAdminRoles)
+                || $this->authorizationChecker->isGranted($attributes, $object);
         } catch (AuthenticationCredentialsNotFoundException $e) {
             return false;
         } catch (\Exception $e) {

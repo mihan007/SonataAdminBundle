@@ -18,35 +18,40 @@ use Sonata\AdminBundle\Datagrid\ProxyQueryInterface;
 use Sonata\AdminBundle\Form\FormMapper;
 use Sonata\AdminBundle\Route\RouteCollection;
 use Sonata\AdminBundle\Show\ShowMapper;
-use Sonata\AdminBundle\Validator\ErrorElement;
+use Sonata\CoreBundle\Validator\ErrorElement;
 
+/**
+ * Class AdminExtension.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 abstract class AdminExtension implements AdminExtensionInterface
 {
     /**
      * {@inheritdoc}
      */
-    public function configureFormFields(FormMapper $form)
+    public function configureFormFields(FormMapper $formMapper)
     {
     }
 
     /**
      * {@inheritdoc}
      */
-    public function configureListFields(ListMapper $list)
+    public function configureListFields(ListMapper $listMapper)
     {
     }
 
     /**
      * {@inheritdoc}
      */
-    public function configureDatagridFilters(DatagridMapper $filter)
+    public function configureDatagridFilters(DatagridMapper $datagridMapper)
     {
     }
 
     /**
      * {@inheritdoc}
      */
-    public function configureShowFields(ShowMapper $filter)
+    public function configureShowFields(ShowMapper $showMapper)
     {
     }
 
@@ -113,6 +118,30 @@ abstract class AdminExtension implements AdminExtensionInterface
     /**
      * {@inheritdoc}
      */
+    public function getAccessMapping(AdminInterface $admin)
+    {
+        return array();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureBatchActions(AdminInterface $admin, array $actions)
+    {
+        return $actions;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureExportFields(AdminInterface $admin, array $fields)
+    {
+        return $fields;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function preUpdate(AdminInterface $admin, $object)
     {
     }
@@ -150,5 +179,13 @@ abstract class AdminExtension implements AdminExtensionInterface
      */
     public function postRemove(AdminInterface $admin, $object)
     {
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function configureActionButtons(AdminInterface $admin, $list, $action, $object)
+    {
+        return $list;
     }
 }

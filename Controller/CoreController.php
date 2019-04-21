@@ -12,16 +12,23 @@
 namespace Sonata\AdminBundle\Controller;
 
 use Sonata\AdminBundle\Admin\AdminInterface;
+use Sonata\AdminBundle\Admin\Pool;
+use Sonata\AdminBundle\Search\SearchHandler;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Class CoreController.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 class CoreController extends Controller
 {
     /**
-     * @return \Sonata\AdminBundle\Admin\Pool
+     * @return Pool
      */
     protected function getAdminPool()
     {
@@ -29,7 +36,7 @@ class CoreController extends Controller
     }
 
     /**
-     * @return \Sonata\AdminBundle\Search\SearchHandler
+     * @return SearchHandler
      */
     protected function getSearchHandler()
     {

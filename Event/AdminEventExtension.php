@@ -20,6 +20,11 @@ use Sonata\AdminBundle\Form\FormMapper;
 use Sonata\AdminBundle\Show\ShowMapper;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
+/**
+ * Class AdminEventExtension.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 class AdminEventExtension extends AdminExtension
 {
     protected $eventDispatcher;

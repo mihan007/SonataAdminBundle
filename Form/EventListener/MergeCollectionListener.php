@@ -16,12 +16,20 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 
+/**
+ * Class MergeCollectionListener.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ */
 class MergeCollectionListener implements EventSubscriberInterface
 {
+    /**
+     * @var ModelManagerInterface
+     */
     protected $modelManager;
 
     /**
-     * @param \Sonata\AdminBundle\Model\ModelManagerInterface $modelManager
+     * @param ModelManagerInterface $modelManager
      */
     public function __construct(ModelManagerInterface $modelManager)
     {
@@ -39,7 +47,7 @@ class MergeCollectionListener implements EventSubscriberInterface
     }
 
     /**
-     * @param \Symfony\Component\Form\FormEvent $event
+     * @param FormEvent $event
      */
     public function onBind(FormEvent $event)
     {

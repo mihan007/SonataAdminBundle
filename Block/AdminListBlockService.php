@@ -12,26 +12,25 @@
 namespace Sonata\AdminBundle\Block;
 
 use Sonata\AdminBundle\Admin\Pool;
-use Sonata\AdminBundle\Form\FormMapper;
-use Sonata\AdminBundle\Validator\ErrorElement;
 use Sonata\BlockBundle\Block\BaseBlockService;
 use Sonata\BlockBundle\Block\BlockContextInterface;
-use Sonata\BlockBundle\Model\BlockInterface;
 use Symfony\Bundle\FrameworkBundle\Templating\EngineInterface;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * @author     Thomas Rabaix <thomas.rabaix@sonata-project.org>
+ * Class AdminListBlockService.
+ *
+ * @author Thomas Rabaix <thomas.rabaix@sonata-project.org>
  */
 class AdminListBlockService extends BaseBlockService
 {
     protected $pool;
 
     /**
-     * @param string                                                     $name
-     * @param \Symfony\Bundle\FrameworkBundle\Templating\EngineInterface $templating
-     * @param \Sonata\AdminBundle\Admin\Pool                             $pool
+     * @param string          $name
+     * @param EngineInterface $templating
+     * @param Pool            $pool
      */
     public function __construct($name, EngineInterface $templating, Pool $pool)
     {
@@ -67,21 +66,6 @@ class AdminListBlockService extends BaseBlockService
     /**
      * {@inheritdoc}
      */
-    public function validateBlock(ErrorElement $errorElement, BlockInterface $block)
-    {
-        // TODO: Implement validateBlock() method.
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function buildEditForm(FormMapper $formMapper, BlockInterface $block)
-    {
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getName()
     {
         return 'Admin List';
@@ -90,14 +74,19 @@ class AdminListBlockService extends BaseBlockService
     /**
      * {@inheritdoc}
      */
-    public function setDefaultSettings(OptionsResolverInterface $resolver)
+    public function configureSettings(OptionsResolver $resolver)
     {
         $resolver->setDefaults(array(
             'groups' => false,
         ));
 
-        $resolver->setAllowedTypes(array(
-            'groups' => array('bool', 'array'),
-        ));
+        // Symfony < 2.6 BC
+        if (method_exists($resolver, 'setNormalizer')) {
+            $resolver->setAllowedTypes('groups', array('bool', 'array'));
+        } else {
+            $resolver->setAllowedTypes(array(
+                'groups' => array('bool', 'array'),
+            ));
+        }
     }
 }

@@ -12,19 +12,46 @@
 namespace Sonata\AdminBundle\Mapper;
 
 /**
+ * Class BaseGroupedMapper
  * This class is used to simulate the Form API.
+ *
+ * @author  Thomas Rabaix <thomas.rabaix@sonata-project.org>
  */
 abstract class BaseGroupedMapper extends BaseMapper
 {
+    /**
+     * @var string
+     */
     protected $currentGroup;
+
+    /**
+     * @var string
+     */
     protected $currentTab;
 
+    /**
+     * @var bool
+     */
+    protected $apply;
+
+    /**
+     * @return array
+     */
     abstract protected function getGroups();
 
+    /**
+     * @return array
+     */
     abstract protected function getTabs();
 
+    /**
+     * @param array $groups
+     */
     abstract protected function setGroups(array $groups);
 
+    /**
+     * @param array $tabs
+     */
     abstract protected function setTabs(array $tabs);
 
     /**
@@ -65,6 +92,7 @@ abstract class BaseGroupedMapper extends BaseMapper
             'description'        => false,
             'translation_domain' => null,
             'name'               => $name,
+            'box_class'          => 'box box-primary',
         );
 
         $code = $name;
@@ -136,6 +164,56 @@ abstract class BaseGroupedMapper extends BaseMapper
     }
 
     /**
+     * Only nested add if the condition match true.
+     *
+     * @param bool $bool
+     *
+     * @return $this
+     *
+     * @throws \RuntimeException
+     */
+    public function ifTrue($bool)
+    {
+        if ($this->apply !== null) {
+            throw new \RuntimeException('Cannot nest ifTrue or ifFalse call');
+        }
+
+        $this->apply = ($bool === true);
+
+        return $this;
+    }
+
+    /**
+     * Only nested add if the condition match false.
+     *
+     * @param bool $bool
+     *
+     * @return $this
+     *
+     * @throws \RuntimeException
+     */
+    public function ifFalse($bool)
+    {
+        if ($this->apply !== null) {
+            throw new \RuntimeException('Cannot nest ifTrue or ifFalse call');
+        }
+
+        $this->apply = ($bool === false);
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function ifEnd()
+    {
+        $this->apply = null;
+
+        return $this;
+    }
+
+    /**
      * Add new tab.
      *
      * @param string $name
@@ -166,6 +244,16 @@ abstract class BaseGroupedMapper extends BaseMapper
         }
 
         return $this;
+    }
+
+    /**
+     * Returns a boolean indicating if there is an open tab at the moment.
+     *
+     * @return bool
+     */
+    public function hasOpenTab()
+    {
+        return null !== $this->currentTab;
     }
 
     /**

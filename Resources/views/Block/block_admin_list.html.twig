@@ -27,7 +27,7 @@ file that was distributed with this source code.
                     <table class="table table-hover">
                         <tbody>
                             {% for admin in group.items %}
-                                {% if admin.hasroute('create') and admin.isGranted('CREATE') or admin.hasroute('list') and admin.isGranted('LIST') %}
+                                {% if admin.hasRoute('create') and admin.isGranted('CREATE') or admin.hasroute('list') and admin.isGranted('LIST') %}
                                             <tr>
                                                 <td class="sonata-ba-list-label" width="40%">
                                                     {{ admin.label|trans({}, admin.translationdomain) }}
@@ -49,7 +49,7 @@ file that was distributed with this source code.
                                                                 <ul class="dropdown-menu">
                                                                     {% for subclass in admin.subclasses|keys %}
                                                                         <li>
-                                                                            <a href="{{ admin.generateUrl('create', {'subclass': subclass}) }}">{{ subclass }}</a>
+                                                                            <a href="{{ admin.generateUrl('create', {'subclass': subclass}) }}">{{ subclass|trans({}, admin.translationdomain) }}</a>
                                                                         </li>
                                                                     {% endfor %}
                                                                 </ul>
@@ -57,7 +57,7 @@ file that was distributed with this source code.
                                                         {% endif %}
                                                         {% if admin.hasroute('list') and admin.isGranted('LIST') %}
                                                             <a class="btn btn-link btn-flat" href="{{ admin.generateUrl('list')}}">
-                                                                <i class="glyphicon glyphicon-list"></i>
+                                                                <i class="fa fa-list"></i>
                                                                 {% trans from 'SonataAdminBundle' %}link_list{% endtrans -%}
                                                             </a>
                                                         {% endif %}

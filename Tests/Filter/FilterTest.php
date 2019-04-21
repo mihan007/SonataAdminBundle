@@ -35,7 +35,11 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('foo', $filter->getOption('label'));
         $this->assertSame('foo', $filter->getLabel());
 
-        $expected = array_merge(array('foo' => 'bar'), $options);
+        $expected = array_merge(array(
+            'show_filter'     => null,
+            'advanced_filter' => true,
+            'foo'             => 'bar',
+        ), $options);
 
         $this->assertSame($expected, $filter->getOptions());
         $this->assertSame('name', $filter->getFieldName());
@@ -47,6 +51,31 @@ class FilterTest extends \PHPUnit_Framework_TestCase
 
         $filter->setCondition('>');
         $this->assertSame('>', $filter->getCondition());
+    }
+
+    public function testGetFieldOption()
+    {
+        $filter = new FooFilter();
+        $filter->initialize('name', array(
+            'field_options' => array('foo' => 'bar', 'baz' => 12345),
+        ));
+
+        $this->assertSame(array('foo' => 'bar', 'baz' => 12345), $filter->getFieldOptions());
+        $this->assertSame('bar', $filter->getFieldOption('foo'));
+        $this->assertSame(12345, $filter->getFieldOption('baz'));
+    }
+
+    public function testSetFieldOption()
+    {
+        $filter = new FooFilter();
+        $this->assertSame(array('required' => false), $filter->getFieldOptions());
+
+        $filter->setFieldOption('foo', 'bar');
+        $filter->setFieldOption('baz', 12345);
+
+        $this->assertSame(array('foo' => 'bar', 'baz' => 12345), $filter->getFieldOptions());
+        $this->assertSame('bar', $filter->getFieldOption('foo'));
+        $this->assertSame(12345, $filter->getFieldOption('baz'));
     }
 
     public function testInitialize()
